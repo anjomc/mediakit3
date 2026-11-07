@@ -1,10 +1,10 @@
 [build]
-  publish = "public"
+  publish = "."
 
 [functions]
+  directory = "."
   node_bundler = "esbuild"
 
-# Link público do media kit: mostra a mesma página, que busca os dados em /api/kit/...
 [[redirects]]
   from = "/kit/*"
   to = "/index.html"
