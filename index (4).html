@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Media Kit Pro</title>
+<style>
+:root{--bg:#f4f5fb;--card:#fff;--tx:#14161f;--mu:#666b82;--ln:#e1e4ef;--ac:#7c5cff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b0c12;--card:#151722;--tx:#eef0f7;--mu:#8b90a7;--ln:#262a3b;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0b0c12;--card:#151722;--tx:#eef0f7;--mu:#8b90a7;--ln:#262a3b;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.w{max-width:960px;margin:0 auto;padding:14px}
+nav{display:flex;gap:6px;overflow-x:auto;padding:6px 0 12px;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);z-index:5}
+nav button,.btn{border:1px solid var(--ln);background:var(--card);color:var(--tx);padding:9px 14px;border-radius:999px;font:inherit;cursor:pointer;white-space:nowrap}
+nav button.on,.btn.pri{background:var(--ac);border-color:var(--ac);color:#fff}
+.g{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.c{background:var(--card);border:1px solid var(--ln);border-radius:16px;padding:14px;margin-bottom:10px}
+.k b{display:block;font-size:26px;letter-spacing:-.5px}.k span,.mu{color:var(--mu);font-size:13px}
+h2{font-size:15px;margin:0 0 10px;text-transform:uppercase;letter-spacing:.08em;color:var(--mu)}
+label{display:block;font-size:12px;color:var(--mu);margin:8px 0 3px}
+input,textarea,select{width:100%;background:var(--bg);color:var(--tx);border:1px solid var(--ln);border-radius:10px;padding:9px;font:inherit}
+textarea{min-height:70px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.bar{height:8px;border-radius:9px;background:var(--ln);overflow:hidden}.bar i{display:block;height:100%;background:var(--ac)}
+.hero{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.av{width:96px;height:96px;border-radius:50%;object-fit:cover;background:var(--ln);border:3px solid var(--ac)}
+table{width:100%;border-collapse:collapse}td,th{padding:8px 4px;border-bottom:1px solid var(--ln);text-align:left}
+.hid{display:none}.up{color:#18a957}.dn{color:#e5484d}
+.err{color:#e5484d}.ok{color:#18a957}
+.scroll{overflow-x:auto}
+.pubv nav{display:none}
+@media print{nav,.noprint,.pane:not(#kitp){display:none!important}#kitp{display:block!important}body{background:#fff;color:#000}.c{break-inside:avoid}}
+</style></head>
+<body><div class="w">
+<nav class="noprint" id="nav"></nav>
+
+<section class="pane" id="dash"></section>
+
+<section class="pane hid" id="kitp">
+ <div class="row noprint" style="margin-bottom:10px"><button class="btn pri" id="pdf">Exportar PDF</button><button class="btn" id="cp">Copiar resumo</button><span class="mu">Prévia do que será exportado</span></div>
+ <div id="kit"></div>
+</section>
+
+<section class="pane hid" id="edit"></section>
+
+<section class="pane hid" id="conn"></section>
+</div>
+<script>
+"use strict";
+const KEY="mkpro1";
+const D={p:{name:"",handle:"",bio:"",niche:"",photo:"",accent:"#7c5cff"},
+m:{7:{},30:{},90:{}},demo:{age:"",gender:"",cities:""},hist:[],top:"",brands:"",services:"",
+prices:[{n:"Reels",p:"",d:""},{n:"Stories (sequência)",p:"",d:""},{n:"Post no feed",p:"",d:""}],
+ct:{wa:"",email:"",site:""},sync:{url:"",last:null,auto:false}};
+let S=load(),per="30",met="f",tab="dash";
+function load(){try{const r=JSON.parse(localStorage.getItem(KEY));if(r)return Object.assign(structuredClone(D),r)}catch(e){}return structuredClone(D)}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const $=id=>document.getElementById(id);
+const num=v=>(v===undefined||v===null||v===""||isNaN(+v))?null:+v;
+const fmt=v=>{v=num(v);return v===null?"—":v>=1e6?(v/1e6).toFixed(1)+"M":v>=1e3?(v/1e3).toFixed(1)+"k":String(v)};
+const get=(o,p)=>p.split(".").reduce((a,k)=>a?.[k],o);
+function set(p,v){const k=p.split(".");let o=S;while(k.length>1)o=o[k.shift()];o[k[0]]=v}
+const NAMES={f:"Seguidores",r:"Alcance",v:"Visualizações",e:"Interações"};
+const tabs=[["dash","Painel"],["kitp","Media Kit"],["edit","Editar"],["conn","Conexão"]];
+
+function go(t){tab=t;document.querySelectorAll(".pane").forEach(x=>x.classList.toggle("hid",x.id!==t));
+ $("nav").innerHTML=tabs.map(([i,l])=>`<button class="${i===t?"on":""}" data-t="${i}">${l}</button>`).join("");
+ if(t==="dash")dash();if(t==="kitp")kit();if(t==="edit")editor();if(t==="conn")conn()}
+$("nav").onclick=e=>{if(e.target.dataset.t)go(e.target.dataset.t)};
+
+function eng(m){const i=num(m.interactions),f=num(m.followers);return i!==null&&f?((i/f)*100).toFixed(2)+"%":"—"}
+function lines(t){return String(t||"").split("\n").map(l=>l.trim()).filter(Boolean)}
+function bars(t){return lines(t).map(l=>{const [a,b]=l.split(":");const v=parseFloat(b);return `<div style="margin:6px 0"><div class="row" style="justify-content:space-between"><span>${esc(a)}</span><span class="mu">${isNaN(v)?"":v+"%"}</span></div><div class="bar"><i style="width:${isNaN(v)?0:Math.min(v,100)}%"></i></div></div>`}).join("")||'<p class="mu">Sem dados.</p>'}
+
+function series(){const days=+per,lim=Date.now()-days*864e5;return S.hist.filter(h=>new Date(h.d).getTime()>=lim).sort((a,b)=>a.d<b.d?-1:1).filter(h=>num(h[met])!==null)}
+function chart(){const s=series();if(s.length<2)return '<p class="mu">Adicione ao menos 2 registros no histórico (aba Editar) ou sincronize para ver o gráfico.</p>';
+ const v=s.map(x=>+x[met]),mn=Math.min(...v),mx=Math.max(...v),W=600,H=180,r=(mx-mn)||1;
+ const pts=v.map((y,i)=>[10+i*(W-20)/(v.length-1),H-15-((y-mn)/r)*(H-35)]);
+ const d=pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join("");
+ const g=((v.at(-1)-v[0])/(v[0]||1)*100);
+ return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto"><path d="${d}L${pts.at(-1)[0]} ${H}L10 ${H}Z" fill="var(--ac)" opacity=".12"/><path d="${d}" fill="none" stroke="var(--ac)" stroke-width="3" stroke-linejoin="round"/>${pts.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="var(--ac)"/>`).join("")}</svg>
+ <div class="row" style="justify-content:space-between"><span class="mu">${s[0].d} → ${s.at(-1).d}</span><b class="${g>=0?"up":"dn"}">${g>=0?"+":""}${g.toFixed(1)}%</b></div>`}
+
+function dash(){const m=S.m[per]||{};
+ $("dash").innerHTML=`<div class="row" style="margin-bottom:10px">
+ <select id="per" style="width:auto">${["7","30","90"].map(x=>`<option value="${x}" ${x===per?"selected":""}>Últimos ${x} dias</option>`).join("")}</select>
+ <button class="btn pri" id="sy">Atualizar</button><span class="mu">Última sincronização: ${S.sync.last?new Date(S.sync.last).toLocaleString("pt-BR"):"nunca"}</span></div>
+ <div id="msg" class="mu"></div>
+ <div class="g">${[["Seguidores",m.followers],["Alcance",m.reach],["Visualizações",m.views],["Interações",m.interactions]].map(([l,v])=>`<div class="c k"><span>${l}</span><b>${fmt(v)}</b></div>`).join("")}<div class="c k"><span>Engajamento (calculado)</span><b>${eng(m)}</b></div></div>
+ <div class="c"><div class="row" style="justify-content:space-between"><h2>Evolução</h2><select id="met" style="width:auto">${Object.entries(NAMES).map(([k,l])=>`<option value="${k}" ${k===met?"selected":""}>${l}</option>`).join("")}</select></div>${chart()}</div>
+ <div class="c"><h2>Melhores conteúdos</h2>${lines(S.top).map(l=>`<div>${esc(l)}</div>`).join("")||'<p class="mu">Preencha na aba Editar ou receba via API.</p>'}</div>`;
+ $("per").onchange=e=>{per=e.target.value;dash()};$("met").onchange=e=>{met=e.target.value;dash()};$("sy").onclick=()=>sync(true)}
+
+function kit(){const p=S.p,m=S.m["30"]||{},c=S.ct;document.documentElement.style.setProperty("--ac",p.accent);
+ const pr=S.prices.filter(r=>r.n||r.p);
+ $("kit").innerHTML=`<div class="c hero">${p.photo?`<img class="av" src="${p.photo}" alt="">`:`<div class="av"></div>`}<div style="flex:1;min-width:200px"><h1 style="margin:0">${esc(p.name)||"Seu nome"}</h1><div class="mu">${p.handle?"@"+esc(p.handle.replace("@","")):""} ${p.niche?"· "+esc(p.niche):""}</div><p>${esc(p.bio)}</p></div></div>
+ <div class="g">${[["Seguidores",m.followers],["Alcance médio (30d)",m.reach],["Visualizações (30d)",m.views]].map(([l,v])=>`<div class="c k"><span>${l}</span><b>${fmt(v)}</b></div>`).join("")}<div class="c k"><span>Engajamento</span><b>${eng(m)}</b></div></div>
+ <div class="c"><h2>Crescimento de seguidores</h2>${(()=>{const o=met;met="f";const h=chart();met=o;return h})()}</div>
+ <div class="g"><div class="c"><h2>Faixa etária</h2>${bars(S.demo.age)}</div><div class="c"><h2>Gênero</h2>${bars(S.demo.gender)}</div><div class="c"><h2>Cidades</h2>${bars(S.demo.cities)}</div></div>
+ ${S.top?`<div class="c"><h2>Destaques</h2>${lines(S.top).map(l=>`<div>${esc(l)}</div>`).join("")}</div>`:""}
+ ${S.brands?`<div class="c"><h2>Marcas parceiras</h2>${lines(S.brands).map(l=>`<span class="btn" style="display:inline-block;margin:3px">${esc(l)}</span>`).join("")}</div>`:""}
+ ${S.services?`<div class="c"><h2>Serviços e formatos</h2>${lines(S.services).map(l=>`<div>• ${esc(l)}</div>`).join("")}</div>`:""}
+ ${pr.length?`<div class="c scroll"><h2>Preços e pacotes</h2><table>${pr.map(r=>`<tr><td><b>${esc(r.n)}</b><div class="mu">${esc(r.d)}</div></td><td style="text-align:right;white-space:nowrap"><b>${esc(r.p)}</b></td></tr>`).join("")}</table></div>`:""}
+ <div class="c"><h2>Contato</h2>${c.wa?`<div>WhatsApp: ${esc(c.wa)}</div>`:""}${c.email?`<div>E-mail: ${esc(c.email)}</div>`:""}${c.site?`<div>${esc(c.site)}</div>`:""}</div>`}
+$("pdf").onclick=()=>window.print();
+$("cp").onclick=async()=>{const m=S.m["30"]||{};const t=`${S.p.name} (@${S.p.handle})\nSeguidores: ${fmt(m.followers)} | Alcance: ${fmt(m.reach)} | Engajamento: ${eng(m)}\n${S.ct.email||""} ${S.ct.wa||""}`;try{await navigator.clipboard.writeText(t);$("cp").textContent="Copiado"}catch(e){$("cp").textContent="Não foi possível copiar"}};
+
+function inp(l,k,t){return `<label>${l}</label><input data-k="${k}" type="${t||"text"}" value="${esc(get(S,k))}">`}
+function area(l,k,ph){return `<label>${l}</label><textarea data-k="${k}" placeholder="${ph||""}">${esc(get(S,k))}</textarea>`}
+function editor(){
+ $("edit").innerHTML=`<div class="c"><h2>Identidade</h2>${inp("Nome","p.name")}${inp("@Instagram","p.handle")}${inp("Nicho","p.niche")}${area("Biografia","p.bio")}
+ <label>Foto</label><input type="file" id="ph" accept="image/*">${inp("Cor de destaque","p.accent","color")}</div>
+ ${["7","30","90"].map(d=>`<div class="c"><h2>Métricas · ${d} dias</h2><div class="g">${[["followers","Seguidores"],["reach","Alcance"],["views","Visualizações"],["interactions","Interações"]].map(([k,l])=>inp(l,`m.${d}.${k}`,"number")).join("")}</div></div>`).join("")}
+ <div class="c"><h2>Público (uma linha: rótulo: %)</h2>${area("Faixa etária","demo.age","18-24: 35")}${area("Gênero","demo.gender","Mulheres: 60")}${area("Cidades","demo.cities","São Paulo: 22")}</div>
+ <div class="c"><h2>Conteúdo e comercial</h2>${area("Melhores conteúdos (uma linha cada)","top")}${area("Marcas parceiras (uma por linha)","brands")}${area("Serviços e formatos","services")}</div>
+ <div class="c scroll"><h2>Preços e pacotes</h2><table id="pt"></table><button class="btn" id="ap">+ Linha</button></div>
+ <div class="c"><h2>Contato</h2>${inp("WhatsApp","ct.wa")}${inp("E-mail","ct.email","email")}${inp("Site / link","ct.site")}</div>
+ <div class="c scroll"><h2>Histórico (manual, ou preenchido pela sincronização)</h2><div class="row"><input type="date" id="hd" style="width:150px"><input id="hf" type="number" placeholder="Seguidores" style="width:110px"><input id="hr" type="number" placeholder="Alcance" style="width:100px"><input id="hv" type="number" placeholder="Views" style="width:100px"><input id="he" type="number" placeholder="Interações" style="width:110px"><button class="btn" id="ah">Adicionar</button></div><table id="ht"></table></div>`;
+ pt();ht();
+ $("edit").oninput=e=>{const k=e.target.dataset.k;if(k){const v=e.target.type==="number"&&e.target.value!==""?+e.target.value:e.target.value;set(k,v);save()}
+  const i=e.target.dataset.pi;if(i!==undefined){S.prices[i][e.target.dataset.pf]=e.target.value;save()}};
+ $("ph").onchange=e=>{const f=e.target.files[0];if(!f)return;const im=new Image();im.onload=()=>{const c=document.createElement("canvas");c.width=c.height=400;const x=c.getContext("2d"),s=Math.min(im.width,im.height);x.drawImage(im,(im.width-s)/2,(im.height-s)/2,s,s,0,0,400,400);S.p.photo=c.toDataURL("image/jpeg",.85);save()};im.src=URL.createObjectURL(f)};
+ $("ap").onclick=()=>{S.prices.push({n:"",p:"",d:""});save();pt()};
+ $("ah").onclick=()=>{const d=$("hd").value;if(!d)return;const h={d};["f","r","v","e"].forEach(k=>{const v=$("h"+k).value;if(v!=="")h[k]=+v});S.hist=S.hist.filter(x=>x.d!==d);S.hist.push(h);save();ht()}}
+function pt(){$("pt").innerHTML=S.prices.map((r,i)=>`<tr><td><input data-pi="${i}" data-pf="n" placeholder="Formato" value="${esc(r.n)}"><input data-pi="${i}" data-pf="d" placeholder="Descrição" value="${esc(r.d)}"></td><td style="width:110px"><input data-pi="${i}" data-pf="p" placeholder="R$" value="${esc(r.p)}"></td><td><button class="btn" data-rm="${i}">×</button></td></tr>`).join("");
+ $("pt").onclick=e=>{if(e.target.dataset.rm){S.prices.splice(+e.target.dataset.rm,1);save();pt()}}}
+function ht(){$("ht").innerHTML=[...S.hist].sort((a,b)=>a.d<b.d?1:-1).slice(0,30).map(h=>`<tr><td>${h.d}</td><td>${fmt(h.f)}</td><td>${fmt(h.r)}</td><td>${fmt(h.v)}</td><td>${fmt(h.e)}</td><td><button class="btn" data-hd="${h.d}">×</button></td></tr>`).join("");
+ $("ht").onclick=e=>{if(e.target.dataset.hd){S.hist=S.hist.filter(x=>x.d!==e.target.dataset.hd);save();ht()}}}
+
+function conn(){$("conn").innerHTML=`<div class="c"><h2>Instagram</h2><p>Os tokens ficam só no servidor. Esta página nunca os vê.</p>
+ <label><input type="checkbox" id="au" style="width:auto" ${S.sync.auto?"checked":""}> Atualizar a cada 6 h enquanto o app estiver aberto</label>
+ <div class="row" style="margin-top:10px"><button class="btn pri" id="lg">Conectar Instagram</button><button class="btn" id="sy2">Sincronizar agora</button><button class="btn" id="pb">Publicar link público</button></div><div id="msg" class="mu" style="margin-top:8px"></div><div id="lk" style="margin-top:8px"></div></div>`;
+ $("au").onchange=e=>{S.sync.auto=e.target.checked;save();timer()};
+ $("lg").onclick=()=>{location.href="/auth/login"};
+ $("sy2").onclick=()=>sync(true);$("pb").onclick=publish}
+async function publish(){try{const b={...S};delete b.sync;const r=await fetch("/api/publish",{method:"POST",body:JSON.stringify(b)});if(r.status===401)throw new Error("Conecte o Instagram primeiro.");const j=await r.json();if(!j.url)throw new Error(j.e||"erro");$("lk").innerHTML=`<b>Link público:</b><br><input readonly value="${esc(j.url)}" onclick="this.select()"><p class="mu">Republique para atualizar o que quem abrir o link vê.</p>`;say("Publicado.")}catch(e){say("Falha ao publicar: "+e.message,1)}}
+
+function say(t,bad){const m=$("msg");if(m){m.textContent=t;m.className=bad?"err":"ok"}}
+async function sync(manual){
+ say("Sincronizando…");
+ try{const r=await fetch("/api/sync");
+  if(r.status===401)throw new Error("Sessão expirada. Conecte o Instagram novamente.");
+  if(!r.ok)throw new Error("Backend respondeu "+r.status);
+  const j=await r.json();
+  if(j.profile)for(const k of["name","handle","bio","photo"])if(j.profile[k])S.p[k]=j.profile[k];
+  if(j.metrics)for(const d of["7","30","90"])if(j.metrics[d])S.m[d]=j.metrics[d];
+  if(Array.isArray(j.history))j.history.forEach(h=>{S.hist=S.hist.filter(x=>x.d!==h.d);S.hist.push(h)});
+  if(j.demographics)Object.assign(S.demo,j.demographics);
+  if(j.top)S.top=j.top;
+  S.sync.last=Date.now();save();if(tab==="dash")dash();say("Sincronizado.")
+ }catch(e){say("Falha na sincronização: "+e.message+" Os dados anteriores foram mantidos.",1)}}
+let tm;function timer(){clearInterval(tm);if(S.sync.auto)tm=setInterval(()=>sync(false),6*36e5)}
+timer();document.documentElement.style.setProperty("--ac",S.p.accent);if(location.pathname.startsWith("/kit/"))pub();else go("dash");
+async function pub(){try{const r=await fetch("/api/kit/"+location.pathname.split("/")[2]);if(!r.ok)throw 0;S=Object.assign(structuredClone(D),await r.json());document.body.classList.add("pubv");go("kitp")}catch(e){document.body.textContent="Media Kit não encontrado."}}
+</script></body></html>
